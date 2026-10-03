@@ -333,6 +333,13 @@ create_update_command() {
 set -euo pipefail
 INSTALL_DIR="/opt/hostvra"
 cd "$INSTALL_DIR"
+
+# Ensure DNS is working
+if ! getent hosts github.com >/dev/null 2>&1; then
+    echo "[WARN] DNS resolution issue detected, applying fallback DNS..."
+    echo -e "nameserver 8.8.8.8\nnameserver 1.1.1.1" > /etc/resolv.conf 2>/dev/null || true
+fi
+
 echo "[INFO] Pulling latest code..."
 git fetch origin main
 git reset --hard origin/main
