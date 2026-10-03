@@ -381,7 +381,7 @@ print_summary() {
     echo -e "  ${CYAN}cd ${INSTALL_DIR} && docker compose -f docker-compose.prod.yml up -d${NC}  — Start"
     echo ""
     echo -e "  ${YELLOW}Next steps:${NC}"
-    echo -e "  1. Point your domain DNS A record to ${SERVER_IP}"
+    echo -e "  1. Point your domain DNS A record to ${PRIMARY_IP}"
     echo -e "  2. Edit ${INSTALL_DIR}/.env with your domain & SMTP settings"
     echo -e "  3. Run ${CYAN}hostvra-update${NC} to apply changes"
     echo ""

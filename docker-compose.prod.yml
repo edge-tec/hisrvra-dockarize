@@ -100,6 +100,11 @@ services:
     restart: unless-stopped
     depends_on:
       - api
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      INTERNAL_API_URL: http://api:8080
+      NEXT_PUBLIC_API_URL: ${API_URL:-http://localhost/api}
     networks:
       - hostvra-internal
 
