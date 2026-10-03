@@ -94,23 +94,29 @@ preflight() {
 sync_clock() {
     info "Synchronizing system clock (fixes apt release file errors)..."
 
+    # Temporarily disable pipefail and errexit so time sync failures never abort the installer
+    set +eo pipefail
+
     # Method 1: systemd-timesyncd (preferred)
     if command -v timedatectl &>/dev/null; then
-        timedatectl set-ntp true 2>/dev/null || true
-        systemctl restart systemd-timesyncd 2>/dev/null || true
-        sleep 2
+        timedatectl set-ntp true 2>/dev/null
+        systemctl restart systemd-timesyncd 2>/dev/null
+        sleep 1
     fi
 
     # Method 2: ntpdate fallback
     if command -v ntpdate &>/dev/null; then
-        ntpdate -u pool.ntp.org 2>/dev/null || ntpdate -u time.google.com 2>/dev/null || true
+        ntpdate -u pool.ntp.org 2>/dev/null || ntpdate -u time.google.com 2>/dev/null
     fi
 
-    # Method 3: curl-based time sync as last resort
-    REMOTE_DATE=$(curl -sf --head https://google.com 2>/dev/null | grep -i "^date:" | sed "s/date: //i")
+    # Method 3: HTTP date header sync as fallback
+    REMOTE_DATE=$(curl -sI --max-time 5 https://google.com 2>/dev/null | grep -i "^date:" | sed -e 's/^[dD]ate: //' -e 's/\r//')
     if [[ -n "${REMOTE_DATE:-}" ]]; then
-        date -s "$REMOTE_DATE" 2>/dev/null || true
+        date -s "$REMOTE_DATE" 2>/dev/null
     fi
+
+    # Re-enable pipefail and errexit
+    set -eo pipefail
 
     success "System clock synced: $(date)"
 }
