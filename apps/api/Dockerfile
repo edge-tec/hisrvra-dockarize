@@ -10,8 +10,8 @@ RUN apk add --no-cache git ca-certificates tzdata
 WORKDIR /src
 
 # Copy both go modules (api depends on agent via replace directive)
-COPY apps/agent/go.mod apps/agent/go.sum ./apps/agent/
-COPY apps/api/go.mod apps/api/go.sum ./apps/api/
+COPY apps/agent/go.mod apps/agent/go.sum* ./apps/agent/
+COPY apps/api/go.mod apps/api/go.sum* ./apps/api/
 
 # Download dependencies first (layer cache)
 WORKDIR /src/apps/agent

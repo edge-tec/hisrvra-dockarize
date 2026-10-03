@@ -6,8 +6,8 @@
 FROM node:20-alpine AS deps
 
 WORKDIR /app
-COPY apps/web/package.json apps/web/package-lock.json* ./
-RUN npm ci --omit=dev
+COPY apps/web/package.json ./
+RUN npm install
 
 # ── Stage 2: Build ────────────────────────────────────────────────────────────
 FROM node:20-alpine AS builder
@@ -20,9 +20,13 @@ COPY --from=deps /app/node_modules ./node_modules
 # Copy web source and config
 COPY apps/web/ ./
 
+# Ensure public directory exists
+RUN mkdir -p /app/public
+
 # Build arguments for API URL (baked into Next.js at build time)
 ARG NEXT_PUBLIC_API_URL=http://localhost:8080
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN npm run build
 

@@ -5,7 +5,7 @@
 # Tested on: Ubuntu 22.04, 24.04, 26.04
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/edge-tec/hisrvra-dockarize/main/docker-install.sh | sudo bash
+#   curl -fsSL https://raw.githubusercontent.com/edge-tec/Hostvra/main/docker-install.sh | sudo bash
 #   or: sudo bash docker-install.sh
 # ==============================================================================
 
@@ -165,11 +165,26 @@ install_git() {
 # ── Clone / Update Repository ────────────────────────────────────────────────
 setup_repository() {
     if [[ -d "$INSTALL_DIR/.git" ]]; then
-        info "Existing installation found. Pulling latest updates..."
+        info "Existing installation found. Ensuring repository origin and pulling latest code..."
         cd "$INSTALL_DIR"
+
+        # Backup existing .env to preserve generated secrets and admin credentials
+        if [[ -f .env ]]; then
+            cp .env /tmp/hostvra.env.bak 2>/dev/null || true
+        fi
+
+        # Ensure remote origin points to the full Hostvra repository
+        git remote set-url origin "$REPO_URL" 2>/dev/null || git remote add origin "$REPO_URL"
         git fetch origin main
+        git checkout -B main origin/main
         git reset --hard origin/main
-        success "Repository updated to latest commit"
+
+        # Restore .env if it was removed
+        if [[ -f /tmp/hostvra.env.bak && ! -f .env ]]; then
+            cp /tmp/hostvra.env.bak .env
+        fi
+
+        success "Repository updated to latest commit from $REPO_URL"
     else
         info "Cloning Hostvra repository..."
         git clone "$REPO_URL" "$INSTALL_DIR"
