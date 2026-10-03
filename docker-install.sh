@@ -211,11 +211,15 @@ configure_env() {
     DOMAIN_ENCRYPTION_SECRET=$(openssl rand -hex 16)
     ADMIN_PASSWORD=$(openssl rand -base64 16 | tr -d '=+/')
 
-    # Detect server IP for default URLs
-    SERVER_IP=$(curl -sf https://api.ipify.org 2>/dev/null || \
-                curl -sf https://ifconfig.me 2>/dev/null || \
-                hostname -I 2>/dev/null | awk '{print $1}' || \
-                echo "localhost")
+    # Detect local and public IP
+    LOCAL_IP=$(hostname -I 2>/dev/null | awk '{print $1}' || echo "localhost")
+    PUBLIC_IP=$(curl -sf -m 2 https://api.ipify.org 2>/dev/null || echo "$LOCAL_IP")
+
+    if [[ "$LOCAL_IP" =~ ^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.) ]]; then
+        SERVER_IP="$LOCAL_IP"
+    else
+        SERVER_IP="$PUBLIC_IP"
+    fi
 
     # Apply generated values
     sed -i "s|JWT_SECRET=.*|JWT_SECRET=${JWT_SECRET}|" .env
@@ -224,7 +228,7 @@ configure_env() {
     sed -i "s|ADMIN_PASSWORD=.*|ADMIN_PASSWORD=${ADMIN_PASSWORD}|" .env
     sed -i "s|APP_URL=.*|APP_URL=http://${SERVER_IP}|" .env
     sed -i "s|API_URL=.*|API_URL=http://${SERVER_IP}/api|" .env
-    sed -i "s|CORS_ALLOWED_ORIGINS=.*|CORS_ALLOWED_ORIGINS=http://${SERVER_IP},https://${SERVER_IP}|" .env
+    sed -i "s|CORS_ALLOWED_ORIGINS=.*|CORS_ALLOWED_ORIGINS=http://${LOCAL_IP},http://${PUBLIC_IP},http://localhost,https://${LOCAL_IP},https://${PUBLIC_IP},https://localhost|" .env
     sed -i "s|ADMIN_EMAIL=.*|ADMIN_EMAIL=admin@${SERVER_IP}|" .env
 
     # Fix DATABASE_URL to use the generated password
@@ -342,16 +346,26 @@ UPDATESCRIPT
 
 # ── Print Summary ────────────────────────────────────────────────────────────
 print_summary() {
-    SERVER_IP=$(curl -sf https://api.ipify.org 2>/dev/null || hostname -I 2>/dev/null | awk '{print $1}' || echo "YOUR_SERVER_IP")
+    LOCAL_IP=$(hostname -I 2>/dev/null | awk '{print $1}' || echo "localhost")
+    PUBLIC_IP=$(curl -sf -m 2 https://api.ipify.org 2>/dev/null || echo "$LOCAL_IP")
+
+    if [[ "$LOCAL_IP" =~ ^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.) ]]; then
+        PRIMARY_IP="$LOCAL_IP"
+    else
+        PRIMARY_IP="$PUBLIC_IP"
+    fi
 
     echo ""
     echo -e "${GREEN}${BOLD}══════════════════════════════════════════════════════════════${NC}"
     echo -e "${GREEN}${BOLD}   Hostvra Platform — Installed Successfully!${NC}"
     echo -e "${GREEN}${BOLD}══════════════════════════════════════════════════════════════${NC}"
     echo ""
-    echo -e "  ${BOLD}Panel URL:${NC}     http://${SERVER_IP}"
-    echo -e "  ${BOLD}API Health:${NC}    http://${SERVER_IP}/health"
-    echo -e "  ${BOLD}Install Dir:${NC}   ${INSTALL_DIR}"
+    echo -e "  ${BOLD}Panel URL (LAN/VM):${NC}  http://${LOCAL_IP}"
+    if [[ "$PUBLIC_IP" != "$LOCAL_IP" ]]; then
+        echo -e "  ${BOLD}Public WAN URL:${NC}      http://${PUBLIC_IP} (requires router port 80 forwarding)"
+    fi
+    echo -e "  ${BOLD}API Health:${NC}          http://${LOCAL_IP}/health"
+    echo -e "  ${BOLD}Install Dir:${NC}         ${INSTALL_DIR}"
     echo ""
     echo -e "  ${BOLD}Useful Commands:${NC}"
     echo -e "  ${CYAN}hostvra-update${NC}                              — Update to latest version"
