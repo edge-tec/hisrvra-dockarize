@@ -22,7 +22,7 @@ BOLD='\033[1m'
 NC='\033[0m'
 
 INSTALL_DIR="/opt/hostvra"
-REPO_URL="https://github.com/edge-tec/hisrvra-dockarize.git"
+REPO_URL="https://github.com/edge-tec/Hostvra.git"
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 info()    { echo -e "${BLUE}[INFO]${NC}    $1"; }
