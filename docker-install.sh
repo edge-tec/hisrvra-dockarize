@@ -89,6 +89,32 @@ preflight() {
     success "Disk space: ${FREE_GB}GB free"
 }
 
+
+# ── Sync System Clock ─────────────────────────────────────────────────────────
+sync_clock() {
+    info "Synchronizing system clock (fixes apt release file errors)..."
+
+    # Method 1: systemd-timesyncd (preferred)
+    if command -v timedatectl &>/dev/null; then
+        timedatectl set-ntp true 2>/dev/null || true
+        systemctl restart systemd-timesyncd 2>/dev/null || true
+        sleep 2
+    fi
+
+    # Method 2: ntpdate fallback
+    if command -v ntpdate &>/dev/null; then
+        ntpdate -u pool.ntp.org 2>/dev/null || ntpdate -u time.google.com 2>/dev/null || true
+    fi
+
+    # Method 3: curl-based time sync as last resort
+    REMOTE_DATE=$(curl -sf --head https://google.com 2>/dev/null | grep -i "^date:" | sed "s/date: //i")
+    if [[ -n "${REMOTE_DATE:-}" ]]; then
+        date -s "$REMOTE_DATE" 2>/dev/null || true
+    fi
+
+    success "System clock synced: $(date)"
+}
+
 # ── Install Docker ────────────────────────────────────────────────────────────
 install_docker() {
     if command -v docker &>/dev/null; then
@@ -330,6 +356,7 @@ print_summary() {
 main() {
     print_banner
     preflight
+    sync_clock
     install_docker
     install_git
     setup_repository
