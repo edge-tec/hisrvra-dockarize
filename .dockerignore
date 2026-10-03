@@ -1,0 +1,43 @@
+# Git
+.git
+.gitignore
+
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Build outputs
+.next
+out
+build
+dist
+bin
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# IDE & OS
+.DS_Store
+.idea
+.vscode
+*.pem
+*.log
+
+# Python
+.venv
+venv
+__pycache__
+*.pyc
+
+# Docs & scripts (not needed in image)
+docs/
+tests/
+*.md
+!README.md
+.antigravity/
+.agents/
+*.sh
+Makefile
